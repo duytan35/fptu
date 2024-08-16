@@ -1,0 +1,52 @@
+version: '3.4'
+networks:
+   capstone-api-network:
+services:
+ capstonedb:
+     container_name: capstonedb
+     image: mcr.microsoft.com/mssql/server:2019-latest
+     restart: unless-stopped
+     environment:
+        - ACCEPT_EULA=Y
+        - MSSQL_SA_PASSWORD=MinhQuan@2002
+     networks :
+        - capstone-api-network
+     ports:
+        - 1431:1433
+     mem_limit: 1.5g
+ cachedb:
+      container_name: cachedb
+      image: redis:latest
+      volumes:
+        - "./APIs/MobileAPI/RedisConfig:/usr/local/etc/redis"
+      ports:
+         - 6379:6379
+      networks :
+        - capstone-api-network
+      environment:
+         - REDIS_PASSWORD=MinhQuan@123
+      command: redis-server /usr/local/etc/redis/redis.conf
+ mobileapi:
+    image: ${DOCKER_REGISTRY-}mobileapi
+    build:
+      context: .
+      dockerfile: APIs/MobileAPI/Dockerfile
+    volumes:
+       - "./APIs/MobileAPI/EmailTemplate:/app/EmailTemplate"
+    ports:
+     - 7777:80
+     - 8087:443 
+    networks:
+      - capstone-api-network
+ webapi:
+    image: ${DOCKER_REGISTRY-}webapi
+    build:
+      context: .
+      dockerfile: APIs/WebAPI/Dockerfile
+    ports:
+        - 9999:80
+        - 9097:443  
+    volumes:
+      - "./APIs/WebAPI/EmailTemplate:/app/EmailTemplate"
+    networks:
+      - capstone-api-network
